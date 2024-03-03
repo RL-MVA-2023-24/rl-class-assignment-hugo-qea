@@ -29,7 +29,7 @@ config = {'nb_actions': env.action_space.n,
           'epsilon_max': 1.,
           'epsilon_decay_period': 1000,
           'epsilon_delay_decay': 20,
-          'batch_size': 1024,
+          'batch_size': 128,
           'gradient_steps': 1,
           'update_target_strategy': 'ema', # or 'ema'
           'update_target_freq': 50,
@@ -41,13 +41,22 @@ n_actions = env.action_space.n
 n_neurons = 64
 n_states = env.observation_space.shape[0]
 
-DQN = nn.Sequential(
-    nn.Linear(n_states, n_neurons),
-    nn.LeakyReLU(),
-    nn.Linear(n_neurons, n_neurons),
-    nn.LeakyReLU(),
-    nn.Linear(n_neurons, n_actions)
-).to(device)
+
+
+class DQN(nn.Module):
+    def __init__(self, n_states, n_actions, n_neurons, depth, device):
+        super(DQN, self).__init__()
+        self.device = device
+        self.layers = nn.ModuleList([nn.Linear(n_states, n_neurons)])
+        for _ in range(depth):
+            self.layers.append(nn.Linear(n_neurons, n_neurons))
+        self.layers.append(nn.Linear(n_neurons, n_actions))
+    def forward(self, x):
+        for layer in self.layers[:-1]:
+            x = nn.LeakyReLU()(layer(x))
+        return self.layers[-1](x)
+    
+model = DQN(n_states, n_actions, n_neurons, 5, device).to(device)
 
 
 def greedy_action(network, state):
@@ -76,7 +85,7 @@ class ReplayBuffer:
 
 
 class ProjectAgent:
-    def __init__(self, config, model):
+    def __init__(self, config=config, model=model):
         self.device = config['device']
         self.nb_actions = config['nb_actions']
         self.gamma = config['gamma'] if 'gamma' in config.keys() else 0.95
@@ -169,8 +178,9 @@ class ProjectAgent:
         torch.save(self.model.state_dict(), path)
 
     def load(self):
-        torch.load(self.model.state_dict(), SAVE_PATH, map_location='cpu')
+        self.model.load_state_dict(torch.load(SAVE_PATH, map_location='cpu'))
 
-agent = ProjectAgent(config, DQN)
+
+"""agent = ProjectAgent(config, model)
 agent.train(env, 100)
-agent.save(SAVE_PATH)
+agent.save(SAVE_PATH)"""
