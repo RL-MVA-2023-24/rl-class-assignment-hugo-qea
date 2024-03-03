@@ -21,18 +21,18 @@ env = TimeLimit(
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-SAVE_PATH = "agent.pth"
+SAVE_PATH = "agentDQNUltimate.pth"
 
 config = {'nb_actions': env.action_space.n,
-          'learning_rate': 0.0001,
-          'gamma': 0.999,
+          'learning_rate': 0.001,
+          'gamma': 0.9999,
           'buffer_size': 10000000,
           'epsilon_min': 0.05,
           'epsilon_max': 1.,
           'epsilon_decay_period': 10000,
-          'epsilon_delay_decay': 100,
+          'epsilon_delay_decay': 500,
           'batch_size': 512,
-          'gradient_steps': 10,
+          'gradient_steps': 100,
           'update_target_strategy': 'ema', # or 'ema'
           'update_target_freq': 50,
           'update_target_tau': 0.005,
@@ -42,7 +42,7 @@ config = {'nb_actions': env.action_space.n,
 n_actions = env.action_space.n
 n_neurons = 256
 n_states = env.observation_space.shape[0]
-depth = 8
+depth = 16
 
 
 
@@ -184,7 +184,7 @@ class ProjectAgent:
     def load(self):
         self.model.load_state_dict(torch.load(SAVE_PATH, map_location='cpu'))
 
-"""
+# Train the agent
 agent = ProjectAgent(config, model)
-agent.train(env, 200)
-agent.save(SAVE_PATH)"""
+agent.train(env, 1500)
+agent.save(SAVE_PATH)
