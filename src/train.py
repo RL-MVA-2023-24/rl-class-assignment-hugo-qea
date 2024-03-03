@@ -6,6 +6,8 @@ import numpy as np
 import torch.nn as nn
 import os
 from copy import deepcopy
+import torch.nn.functional as F
+from tqdm import trange
 
 env = TimeLimit(
     env=HIVPatient(domain_randomization=False), max_episode_steps=200
@@ -22,15 +24,15 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 SAVE_PATH = "agent.pth"
 
 config = {'nb_actions': env.action_space.n,
-          'learning_rate': 0.001,
-          'gamma': 0.99,
-          'buffer_size': 1000000,
-          'epsilon_min': 0.01,
+          'learning_rate': 0.0001,
+          'gamma': 0.999,
+          'buffer_size': 10000000,
+          'epsilon_min': 0.05,
           'epsilon_max': 1.,
-          'epsilon_decay_period': 1000,
-          'epsilon_delay_decay': 20,
-          'batch_size': 128,
-          'gradient_steps': 1,
+          'epsilon_decay_period': 10000,
+          'epsilon_delay_decay': 100,
+          'batch_size': 512,
+          'gradient_steps': 10,
           'update_target_strategy': 'ema', # or 'ema'
           'update_target_freq': 50,
           'update_target_tau': 0.005,
@@ -38,7 +40,7 @@ config = {'nb_actions': env.action_space.n,
           'device': device}
 
 n_actions = env.action_space.n
-n_neurons = 128
+n_neurons = 256
 n_states = env.observation_space.shape[0]
 depth = 8
 
@@ -54,7 +56,7 @@ class DQN(nn.Module):
         self.layers.append(nn.Linear(n_neurons, n_actions))
     def forward(self, x):
         for layer in self.layers[:-1]:
-            x = nn.LeakyReLU()(layer(x))
+            x = torch.relu(layer(x))
         return self.layers[-1](x)
     
 model = DQN(n_states, n_actions, n_neurons, depth, device).to(device)
@@ -168,6 +170,7 @@ class ProjectAgent:
             else:
                 state = next_state
         return episode_return
+    
     def act(self, observation, use_random=False):
         with torch.no_grad():
             if use_random:
@@ -183,5 +186,5 @@ class ProjectAgent:
 
 """
 agent = ProjectAgent(config, model)
-agent.train(env, 100)
+agent.train(env, 200)
 agent.save(SAVE_PATH)"""
