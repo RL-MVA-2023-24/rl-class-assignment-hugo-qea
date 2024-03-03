@@ -169,7 +169,7 @@ class ProjectAgent:
         torch.save(self.model.state_dict(), path)
 
     def load(self):
-        torch.load(self.model.state_dict(), SAVE_PATH)
+        torch.load(self.model.state_dict(), SAVE_PATH, map_location='cpu')
 
 agent = ProjectAgent(config, DQN)
 agent.train(env, 100)
