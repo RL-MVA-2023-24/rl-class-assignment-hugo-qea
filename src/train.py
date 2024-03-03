@@ -38,8 +38,9 @@ config = {'nb_actions': env.action_space.n,
           'device': device}
 
 n_actions = env.action_space.n
-n_neurons = 64
+n_neurons = 128
 n_states = env.observation_space.shape[0]
+depth = 8
 
 
 
@@ -56,7 +57,7 @@ class DQN(nn.Module):
             x = nn.LeakyReLU()(layer(x))
         return self.layers[-1](x)
     
-model = DQN(n_states, n_actions, n_neurons, 5, device).to(device)
+model = DQN(n_states, n_actions, n_neurons, depth, device).to(device)
 
 
 def greedy_action(network, state):
@@ -180,7 +181,7 @@ class ProjectAgent:
     def load(self):
         self.model.load_state_dict(torch.load(SAVE_PATH, map_location='cpu'))
 
-
-"""agent = ProjectAgent(config, model)
+"""
+agent = ProjectAgent(config, model)
 agent.train(env, 100)
 agent.save(SAVE_PATH)"""
