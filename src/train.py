@@ -20,30 +20,15 @@ env = TimeLimit(
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-SAVE_PATH = "agentDQNNew2.pth"
+SAVE_PATH = "agentDQNL1_v2.pth"
 
-LOAD_PATH = os.path.join(os.path.dirname(__file__), "BestScore.pth")
+LOAD_PATH = os.path.join(os.path.dirname(__file__), "agentDQNL1_v2.pth_tmp150")
 
-config = {'nb_actions': env.action_space.n,
-          'learning_rate': 0.001,
-          'gamma': 0.99,
-          'buffer_size': 10000000,
-          'epsilon_min': 0.02,
-          'epsilon_max': 1.,
-          'epsilon_decay_period': 20000,
-          'epsilon_delay_decay': 50,
-          'batch_size': 512,
-          'gradient_steps': 10,
-          'update_target_strategy': 'ema', # or 'ema'
-          'update_target_freq': 50,
-          'update_target_tau': 0.005,
-          'criterion': nn.MSELoss(),
-          'device': device}
 
 n_actions = env.action_space.n
-n_neurons = 256
+n_neurons = 128
 n_states = env.observation_space.shape[0]
-depth = 5
+depth = 10
 
 
 
@@ -62,6 +47,22 @@ class DQN(nn.Module):
     
 model = DQN(n_states, n_actions, n_neurons, depth, device).to(device)
 
+config = {'nb_actions': env.action_space.n,
+          'learning_rate': 0.001,
+          'gamma': 0.90,
+          'buffer_size': 10000000,
+          'epsilon_min': 0.02,
+          'epsilon_max': 1.,
+          'epsilon_decay_period': 2000,
+          'epsilon_delay_decay': 20,
+          'batch_size': 512,
+          'gradient_steps': 10,
+          'update_target_strategy': 'ema', # or 'ema'
+          'update_target_freq': 50,
+          'update_target_tau': 0.005,
+          'criterion': nn.MSELoss(),
+          'device': device}
+
 
 def greedy_action(network, state):
     device = "cuda" if next(network.parameters()).is_cuda else "cpu"
@@ -71,7 +72,7 @@ def greedy_action(network, state):
 
 class ReplayBuffer:
     def __init__(self, capacity, device):
-        self.capacity = capacity # capacity of the buffer
+        self.capacity = int(capacity) # capacity of the buffer
         self.data = []
         self.index = 0 # index of the next cell to be filled
         self.device = device
@@ -85,6 +86,7 @@ class ReplayBuffer:
         return list(map(lambda x:torch.Tensor(np.array(x)).to(self.device), list(zip(*batch))))
     def __len__(self):
         return len(self.data)
+
     
 
 
@@ -189,9 +191,27 @@ class ProjectAgent:
         self.model.load_state_dict(torch.load(LOAD_PATH, map_location='cpu'))
 
 
+
 if __name__ == "__main__":
     # Train the agent
     agent = ProjectAgent(config, model)
     agent.load()
     agent.train(env, 200)
     agent.save(SAVE_PATH)
+    """
+    config = {'gamma': .99,
+          'buffer_size': 1e6,
+          'learning_rate': 3e-4,
+          'batch_size': 256,
+          'tau': 0.005,
+          'delay_learning': 1e4,
+          'exploration_noise': .1,
+          'action_noise_scale': 0.2,
+          'action_noise_clip"': 0.5,
+          'policy_update_freq': 2,
+         }
+    Qfunction1 = QNetwork(env).to(device)
+    Qfunction2 = QNetwork(env).to(device)
+    policy = policyNetwork(env).to(device)
+    agent = td3_agent(config, Qfunction1, Qfunction2, policy)
+    agent.train(env, 200)"""
