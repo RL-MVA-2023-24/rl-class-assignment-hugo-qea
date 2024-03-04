@@ -19,7 +19,7 @@ env = TimeLimit(
 # Don't modify the methods names and signatures, but you can add methods.
 # ENJOY!
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
 
 SAVE_PATH = "agentDQNUltimate.pth"
 
@@ -29,20 +29,20 @@ config = {'nb_actions': env.action_space.n,
           'buffer_size': 10000000,
           'epsilon_min': 0.05,
           'epsilon_max': 1.,
-          'epsilon_decay_period': 10000,
-          'epsilon_delay_decay': 500,
+          'epsilon_decay_period': 400,
+          'epsilon_delay_decay': 200,
           'batch_size': 512,
-          'gradient_steps': 100,
+          'gradient_steps': 20,
           'update_target_strategy': 'ema', # or 'ema'
           'update_target_freq': 50,
           'update_target_tau': 0.005,
-          'criterion': torch.nn.SmoothL1Loss(),
+          'criterion': nn.MSELoss(),
           'device': device}
 
 n_actions = env.action_space.n
 n_neurons = 256
 n_states = env.observation_space.shape[0]
-depth = 16
+depth = 10
 
 
 
@@ -63,7 +63,7 @@ model = DQN(n_states, n_actions, n_neurons, depth, device).to(device)
 
 
 def greedy_action(network, state):
-    device = "cuda" if next(network.parameters()).is_cuda else "cpu"
+    device = "cuda:2" if next(network.parameters()).is_cuda else "cpu"
     with torch.no_grad():
         Q = network(torch.Tensor(state).unsqueeze(0).to(device))
         return torch.argmax(Q).item()
@@ -183,8 +183,8 @@ class ProjectAgent:
 
     def load(self):
         self.model.load_state_dict(torch.load(SAVE_PATH, map_location='cpu'))
-
+"""
 # Train the agent
 agent = ProjectAgent(config, model)
-agent.train(env, 1500)
-agent.save(SAVE_PATH)
+agent.train(env, 500)
+agent.save(SAVE_PATH)"""
