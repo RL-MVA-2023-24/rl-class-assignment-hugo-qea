@@ -7,7 +7,6 @@ import torch.nn as nn
 import os
 from copy import deepcopy
 import torch.nn.functional as F
-from tqdm import trange
 
 env = TimeLimit(
     env=HIVPatient(domain_randomization=False), max_episode_steps=200
