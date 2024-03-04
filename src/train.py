@@ -21,9 +21,9 @@ env = TimeLimit(
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-SAVE_PATH = "agentDQNNew.pth_tmp100"
+SAVE_PATH = "agentDQNNew2.pth"
 
-LOAD_PATH = os.path.join(os.path.dirname(__file__), "agentDQNNew.pth_tmp100")
+LOAD_PATH = os.path.join(os.path.dirname(__file__), "BestScore.pth")
 
 config = {'nb_actions': env.action_space.n,
           'learning_rate': 0.001,
@@ -193,5 +193,6 @@ class ProjectAgent:
 if __name__ == "__main__":
     # Train the agent
     agent = ProjectAgent(config, model)
+    agent.load()
     agent.train(env, 200)
     agent.save(SAVE_PATH)
