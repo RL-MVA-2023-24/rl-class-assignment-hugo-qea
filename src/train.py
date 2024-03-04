@@ -19,20 +19,22 @@ env = TimeLimit(
 # Don't modify the methods names and signatures, but you can add methods.
 # ENJOY!
 
-device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-SAVE_PATH = "agentDQNUltimate.pth"
+SAVE_PATH = "agentDQNNew.pth_tmp100"
+
+LOAD_PATH = os.path.join(os.path.dirname(__file__), "agentDQNNew.pth_tmp100")
 
 config = {'nb_actions': env.action_space.n,
           'learning_rate': 0.001,
-          'gamma': 0.9999,
+          'gamma': 0.99,
           'buffer_size': 10000000,
-          'epsilon_min': 0.05,
+          'epsilon_min': 0.02,
           'epsilon_max': 1.,
-          'epsilon_decay_period': 400,
-          'epsilon_delay_decay': 200,
+          'epsilon_decay_period': 20000,
+          'epsilon_delay_decay': 50,
           'batch_size': 512,
-          'gradient_steps': 20,
+          'gradient_steps': 10,
           'update_target_strategy': 'ema', # or 'ema'
           'update_target_freq': 50,
           'update_target_tau': 0.005,
@@ -42,7 +44,7 @@ config = {'nb_actions': env.action_space.n,
 n_actions = env.action_space.n
 n_neurons = 256
 n_states = env.observation_space.shape[0]
-depth = 10
+depth = 5
 
 
 
@@ -63,7 +65,7 @@ model = DQN(n_states, n_actions, n_neurons, depth, device).to(device)
 
 
 def greedy_action(network, state):
-    device = "cuda:2" if next(network.parameters()).is_cuda else "cpu"
+    device = "cuda" if next(network.parameters()).is_cuda else "cpu"
     with torch.no_grad():
         Q = network(torch.Tensor(state).unsqueeze(0).to(device))
         return torch.argmax(Q).item()
@@ -169,6 +171,9 @@ class ProjectAgent:
                 episode_cum_reward = 0
             else:
                 state = next_state
+                
+            if episode % 50 == 0:
+                self.save(SAVE_PATH+"_tmp"+str(episode))
         return episode_return
     
     def act(self, observation, use_random=False):
@@ -182,9 +187,11 @@ class ProjectAgent:
         torch.save(self.model.state_dict(), path)
 
     def load(self):
-        self.model.load_state_dict(torch.load(SAVE_PATH, map_location='cpu'))
-"""
-# Train the agent
-agent = ProjectAgent(config, model)
-agent.train(env, 500)
-agent.save(SAVE_PATH)"""
+        self.model.load_state_dict(torch.load(LOAD_PATH, map_location='cpu'))
+
+
+if __name__ == "__main__":
+    # Train the agent
+    agent = ProjectAgent(config, model)
+    agent.train(env, 200)
+    agent.save(SAVE_PATH)
