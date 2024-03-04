@@ -20,13 +20,13 @@ env = TimeLimit(
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-SAVE_PATH = "agentDQNL1_v2.pth"
+SAVE_PATH = "agentDQNL1_v3.pth"
 
-LOAD_PATH = os.path.join(os.path.dirname(__file__), "agentDQNL1_v2.pth_tmp150")
+LOAD_PATH = os.path.join(os.path.dirname(__file__), "agentDQNL1_v3.pth")
 
 
 n_actions = env.action_space.n
-n_neurons = 128
+n_neurons = 256
 n_states = env.observation_space.shape[0]
 depth = 10
 
@@ -52,16 +52,17 @@ config = {'nb_actions': env.action_space.n,
           'gamma': 0.90,
           'buffer_size': 10000000,
           'epsilon_min': 0.02,
-          'epsilon_max': 1.,
-          'epsilon_decay_period': 2000,
-          'epsilon_delay_decay': 20,
+          'epsilon_max': 0.02,
+          'epsilon_decay_period': 10000,
+          'epsilon_delay_decay': 50,
           'batch_size': 512,
           'gradient_steps': 10,
           'update_target_strategy': 'ema', # or 'ema'
           'update_target_freq': 50,
           'update_target_tau': 0.005,
-          'criterion': nn.MSELoss(),
-          'device': device}
+          'criterion': nn.SmoothL1Loss(),
+          'device': device,
+          'optimizer': torch.optim.RMSprop(model.parameters(), lr=0.001, alpha=0.95, eps=0.01)}
 
 
 def greedy_action(network, state):
@@ -173,7 +174,7 @@ class ProjectAgent:
             else:
                 state = next_state
                 
-            if episode % 50 == 0:
+            if episode % 25 == 0:
                 self.save(SAVE_PATH+"_tmp"+str(episode))
         return episode_return
     
